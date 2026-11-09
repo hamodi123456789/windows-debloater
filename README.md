@@ -5,7 +5,7 @@
 An interactive, lightweight Python command-line utility designed to clean up pre-installed Windows bloatware, telemetry tools, sponsored games, and background services on Windows 10 and Windows 11.
 
 ---
-## 🛑 IMPORTANT
+# 🛑 IMPORTANT
 
 If you’re able to, please support me by [joining my patreon.](https://www.patreon.com/Modi393)
 
