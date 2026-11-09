@@ -1,6 +1,19 @@
 # 🧹 Windows Debloater & App Remover Tool
 
+
+
 An interactive, lightweight Python command-line utility designed to clean up pre-installed Windows bloatware, telemetry tools, sponsored games, and background services on Windows 10 and Windows 11.
+
+—--
+## 🛑 IMPORTANT
+
+If you’re able to, please support me by [joining my patreon.](https://www.patreon.com/Modi393)
+
+Your support will help me make more updates to Windows Debloater!
+
+If you’re unable to, I hope you enjoy the program!
+
+This is just a fun lil project i made :P
 
 ---
 
