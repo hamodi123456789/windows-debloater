@@ -13,7 +13,7 @@ Your support will help me make more updates to Windows Debloater!
 
 If you’re unable to, I hope you enjoy the program!
 
-This is just a fun lil project i made :P
+This is just a fun nonprofit lil project i made :P
 
 ---
 
