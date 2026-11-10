@@ -16,6 +16,13 @@ If you’re unable to, I hope you enjoy the program!
 This is just a fun nonprofit lil project i made :P
 
 ---
+## 🛑 HEADS UP!
+
+This app requires Python to be installed on your computer
+
+I’f you havent already installed it, you can do it now by clicking this [blue little text](python.org/downloads/windows)
+
+---
 
 ## ✨ Features
 
