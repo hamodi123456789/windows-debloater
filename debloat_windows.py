@@ -197,7 +197,6 @@ def disable_defender():
 
 def remove_onedrive():
     """Kill running OneDrive processes and execute uninstaller."""
-    # Ensure OneDrive is not locked by background file sync
     subprocess.run(["taskkill", "/f", "/im", "OneDrive.exe"], capture_output=True)
     
     sys_root = os.environ.get("SystemRoot", "C:\\Windows")
@@ -266,7 +265,8 @@ def main():
         input("\nPress Enter to exit...")
         sys.exit(1)
 
-    selected_indices = set(range(1, len(BLOATWARE_LIST) + 1))
+    # All bloatware items are unselected by default
+    selected_indices = set()
 
     while True:
         display_menu(selected_indices)
