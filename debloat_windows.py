@@ -44,7 +44,7 @@ BLOATWARE_LIST = [
         "id": "teams_personal",
         "name": "Microsoft Teams (Consumer)",
         "type": "appx",
-        "packages": ["*MSTeams*", "*MicrosoftTeams*"],
+        "packages": ["*MSTeams*"],
         "desc": "The annoying built-in personal version of Teams that auto-starts on boot."
     },
     {
@@ -79,7 +79,7 @@ BLOATWARE_LIST = [
         "id": "paint_3d",
         "name": "Paint 3D & 3D Viewer",
         "type": "appx",
-        "packages": ["*MSPaint*", "*Paint3D*", "*3DViewer*", "*3DBuilder*"],
+        "packages": ["*Paint3D*", "*3DViewer*", "*3DBuilder*"],
         "desc": "Leftover 3D modeling utility bloat from older Windows updates."
     },
     {
@@ -140,6 +140,7 @@ BLOATWARE_LIST = [
     }
 ]
 
+
 def is_admin():
     """Check if the script is running with Administrator privileges on Windows."""
     if sys.platform != "win32":
@@ -149,6 +150,7 @@ def is_admin():
     except Exception:
         return False
 
+
 def run_powershell(command):
     """Execute a PowerShell command with strict error handling."""
     ps_script = f"$ErrorActionPreference = 'Stop'; {command}"
@@ -156,25 +158,52 @@ def run_powershell(command):
     result = subprocess.run(full_cmd, capture_output=True, text=True)
     return result.returncode == 0, result.stdout.strip() or result.stderr.strip()
 
+
 def remove_appx(package_patterns):
-    """Remove standard AppX and Provisioned AppX packages by wildcards."""
+    """Remove AppX packages by wildcard while returning an actual failure if any match cannot be removed."""
     all_success = True
     messages = []
-    
+
     for pattern in package_patterns:
-        cmd = (
-            f"Get-AppxPackage -AllUsers '{pattern}' -ErrorAction SilentlyContinue | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue; "
-            f"Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | "
-            f"Where-Object {{ $_.DisplayName -like '{pattern}' -or $_.PackageName -like '{pattern}' }} | "
-            f"Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue"
-        )
-        success, msg = run_powershell(cmd)
+        escaped_pattern = pattern.replace("'", "''")
+        ps_script = f"""
+$pattern = '{escaped_pattern}'
+$packages = @(Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue | Where-Object {{ $_.Name -like $pattern -or $_.PackageFullName -like $pattern -or $_.InstallLocation -like $pattern }})
+$provisioned = @(Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object {{ $_.DisplayName -like $pattern -or $_.PackageName -like $pattern }})
+
+if ($packages.Count -eq 0 -and $provisioned.Count -eq 0) {{
+    'NO_MATCHES'
+    exit 0
+}}
+
+foreach ($pkg in $packages) {{
+    try {{
+        Remove-AppxPackage -AllUsers $pkg.PackageFullName -ErrorAction Stop | Out-Null
+    }} catch {{
+        $_ | Out-String
+        exit 1
+    }}
+}}
+
+foreach ($pkg in $provisioned) {{
+    try {{
+        Remove-AppxProvisionedPackage -Online -PackageName $pkg.PackageName -ErrorAction Stop | Out-Null
+    }} catch {{
+        $_ | Out-String
+        exit 1
+    }}
+}}
+
+'REMOVED'
+"""
+        success, msg = run_powershell(ps_script)
         if not success:
             all_success = False
         if msg:
             messages.append(msg)
-            
+
     return all_success, "\n".join(messages)
+
 
 def disable_copilot():
     """Remove Copilot AppX and set Registry keys to disable taskbar integration."""
@@ -186,6 +215,7 @@ def disable_copilot():
     )
     return run_powershell(reg_cmd)
 
+
 def disable_defender():
     """Disable Real-time Protection via PowerShell commands."""
     defender_cmd = (
@@ -195,26 +225,28 @@ def disable_defender():
     )
     return run_powershell(defender_cmd)
 
+
 def remove_onedrive():
     """Kill running OneDrive processes and execute uninstaller."""
     subprocess.run(["taskkill", "/f", "/im", "OneDrive.exe"], capture_output=True)
-    
+
     sys_root = os.environ.get("SystemRoot", "C:\\Windows")
     sys32 = os.path.join(sys_root, "System32", "OneDriveSetup.exe")
     sys64 = os.path.join(sys_root, "SysWOW64", "OneDriveSetup.exe")
     local_appdata = os.environ.get("LOCALAPPDATA", "")
     user_setup = os.path.join(local_appdata, "Microsoft", "OneDrive", "OneDriveSetup.exe")
-    
+
     setup_path = None
     for path in [sys64, sys32, user_setup]:
         if os.path.exists(path):
             setup_path = path
             break
-            
+
     if setup_path:
         proc = subprocess.run([setup_path, "/uninstall"], capture_output=True, text=True)
         return proc.returncode == 0, "OneDrive uninstalled successfully."
     return False, "OneDrive installer not found."
+
 
 def display_menu(selected_indices):
     """Display the interactive selection menu."""
@@ -223,18 +255,19 @@ def display_menu(selected_indices):
     print("         WINDOWS DEBLOATER & APP REMOVER TOOL")
     print("=" * 75)
     print("Select items to REMOVE (Toggle numbers/ranges, then type 'R' to run):\n")
-    
+
     for idx, item in enumerate(BLOATWARE_LIST, 1):
         status = "[X] REMOVE" if idx in selected_indices else "[ ] KEEP  "
         print(f"  {idx:2d}. {status}  {item['name']}")
         print(f"      └─ {item['desc']}")
-    
+
     print("\n" + "-" * 75)
     print("  [#] Toggle items (e.g. enter 1, 3, or ranges like 1-5)")
     print("  [A] Select All  |  [N] Deselect All")
     print("  [R] RUN Removal Process")
     print("  [Q] Quit Script")
     print("-" * 75)
+
 
 def toggle_indices(choice_str, current_selected, max_val):
     """Toggle individual numbers or ranges (e.g., 1-5) in the selection set."""
@@ -257,6 +290,7 @@ def toggle_indices(choice_str, current_selected, max_val):
                     current_selected.remove(val)
                 else:
                     current_selected.add(val)
+
 
 def main():
     if not is_admin():
@@ -294,7 +328,7 @@ def main():
     for idx in sorted(selected_indices):
         item = BLOATWARE_LIST[idx - 1]
         print(f"[*] Removing {item['name']}...")
-        
+
         if item["type"] == "appx":
             success, msg = remove_appx(item["packages"])
         elif item["type"] == "copilot":
@@ -309,12 +343,13 @@ def main():
         if success:
             print("    └─ Done.")
         else:
-            print("    └─ Processed (or already removed).")
+            print(f"    └─ Failed: {msg or 'See PowerShell output for details.'}")
 
     print("\n" + "=" * 75)
     print("DEBLOAT COMPLETE! Restart your PC for all changes to take effect.")
     print("=" * 75)
     input("\nPress Enter to exit...")
+
 
 if __name__ == "__main__":
     main()
